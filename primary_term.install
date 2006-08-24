@@ -1,0 +1,18 @@
+<?php
+
+function primary_term_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':  
+      db_query("CREATE TABLE {primary_term} (
+        vid int(10) NOT NULL default '0',
+        tid int(10) NOT NULL default '0',
+        KEY vid (vid)
+        ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+  // weight module to run after taxonomy
+  db_query("UPDATE {system} SET weight = 9 WHERE name = 'primary_term'");
+  
+  drupal_set_message(t('Database tables installed for Primary Term module.'));
+  break;
+  }
+}

@@ -1,0 +1,115 @@
+<?php
+
+// $Id$
+
+/**
+ * @TODO
+ * - add a validate function to the form_alter and add taxonomy terms in there...
+ */
+
+function primary_term_help($section){
+  switch($section){
+    case 'admin/modules#description' :
+      return t('Allows selection of a primary term for nodes');   
+  }
+}
+
+function primary_term_nodeapi(&$node, $op, $teaser, $page){
+  switch ($op){
+    case 'insert':
+    case 'update':
+      db_query('DELETE FROM {primary_term} WHERE vid = %d', $node->vid); // only one term per node revision
+      db_query('INSERT INTO {primary_term} (vid, tid) VALUES (%d, %d)', $node->vid, $node->primaryterm);
+      
+      // make sure that this term is also in the taxonomy table (even if it wasn't selected in the taxonomy form)
+      db_query('DELETE FROM {term_node} WHERE nid = %d AND tid = %d', $node->vid, $node->primaryterm); // prevent duplicates
+      db_query('INSERT INTO {term_node} (nid, tid) VALUES (%d, %d)', $node->vid, $node->primaryterm);     
+      break;
+    
+    case 'load':
+      $tid = db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $node->vid));
+      $term = taxonomy_get_term($tid);
+      $node->primary_term = $term;
+  }
+}
+
+function primary_term_form_alter($form_id, &$form) { 
+  $type = $form['type']['#value'];
+  $node = $form['#node'];
+
+  switch ($form_id) {
+    case $type .'_node_form':
+  
+      if ($vids = variable_get('pt_vocabs_'. $form['type']['#value'], array())) {
+        
+        // go through all taxonomy terms for this type:
+        $terms = array();
+        if(is_array($form['taxonomy'])){
+          foreach($form['taxonomy'] as $vid => $vocab){
+            if(in_array($vid, $vids)){
+              if(is_array($vocab['#options'])){
+                if(strlen(trim($vocab['#options']))){
+                  unset($vocab['#options'][0]);
+                }
+                $terms = $terms + $vocab['#options'];
+              }
+            }
+          }
+        }
+        
+        // stick a <none> value on the front of the array
+        $terms = array(t('<none>')) + $terms;
+        
+        $type = _node_names('name', $node);
+        
+        // create a new field
+        $form['primaryterm'] = array(
+          '#type' => 'select',
+          '#multiple' => 0,
+          '#title' => t('Primary Category'),
+          '#default_value' => array(primary_term_get_term($form['#node']->vid)),
+          '#options' => $terms,
+          '#description' => t('Select a primary term for this %type.', array('%type' => $type)),
+          '#theme' => 'taxonomy_term_select',
+          '#required' => FALSE,
+          '#weight' => -4,
+          '#tree' => TRUE,
+          );
+        //$form['primary_term'] = array('primaryterm' => $pt_field) + $form['taxonomy'];
+        //dprint_r($form['taxonomy']);
+      }
+      break;
+  
+  
+  case $type.'_node_settings':
+  
+    $vocabs = taxonomy_get_vocabularies($type);
+    foreach($vocabs as $vocab){
+      $vocabularies[$vocab->vid] = $vocab->name;
+    }
+    $form['primary_terms'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Primary Term'),
+      '#weight' => -1,
+    );
+    $form['primary_terms']['pt_vocabs_'. $type] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Vocabularies for Primary Term'),
+      '#options' => $vocabularies,
+      '#default_value' => variable_get('pt_vocabs_'. $type, array()),
+      '#description' => t('Select which vocabularies should contribute terms to the Primary Category selector. Select none and the selector will not appear.'),
+    );
+    
+    
+    
+  }  
+}
+
+/**
+ * Get primary term for a given node version id (vid)
+ *
+ * @param integer $vid
+ */
+function primary_term_get_term($vid){
+  return db_result(db_query('SELECT tid FROM primary_term WHERE vid = %d', $vid));
+}
