@@ -13,7 +13,11 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page){
     case 'update':
       db_query('DELETE FROM {primary_term} WHERE vid = %d', $node->vid); // only one term per node revision
       // when node form is submitted, the new PT comes in the $form['taxonomy array']. blame fapi.
-      $primaryterm = isset($node->taxonomy['primaryterm']) ? isset($node->taxonomy['primaryterm']) : $node->primaryterm;
+      $primaryterm = isset($node->taxonomy['primaryterm']) ? $node->taxonomy['primaryterm'] : $node->primaryterm;
+      if (!isset($primaryterm) || !$primaryterm) {
+        break;
+      }
+
       db_query('INSERT INTO {primary_term} (vid, tid) VALUES (%d, %d)', $node->vid, $primaryterm);
       
       // TODO: technically, this should data should be prepared in nodeapi('submit') and then let taxonomy save the terms. that assures that modules that listen on nodeapi insert/update receive proper data
@@ -69,7 +73,7 @@ function primary_term_form_alter($form_id, &$form) {
           '#theme' => 'taxonomy_term_select',
           '#required' => FALSE,
           '#weight' => -4,
-          // '#tree' => TRUE,
+          '#tree' => FALSE, // keep value out of $node->taxonomy
           );
       }
       break;
