@@ -46,7 +46,6 @@ function primary_term_form_alter($form_id, &$form) {
         $terms = array();
         if(is_array($form['taxonomy'])){
           foreach($form['taxonomy'] as $vid => $vocab){
-            // dsm($vocab);
             if(in_array($vid, $vids)){
               if(is_array($vocab['#options'])){
                 if(strlen(trim($vocab['#options']))){
