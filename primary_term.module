@@ -4,32 +4,51 @@
 
 /**
  * @TODO
- * - add a validate function to the form_alter and add taxonomy terms in nodeapi('submit')?
+ * - add a validate function to the form_alter
  */
 
-function primary_term_nodeapi(&$node, $op, $teaser, $page){
+function primary_term_nodeapi(&$node, $op, $teaser, $page) {
+  // This module sets $node->primary_term on node load but
+  // $node->primaryterm via the node form.  I don't know if a previous
+  // author meant that or if it was a mistake.  For now, the module
+  // preserves that behavior.
+
   switch ($op){
+    case 'submit':
+      // $node->taxonomy[] contains voc => array(tids) but
+      // taxonomy_node_save() also accepts just tids in the same array.
+      if (!empty($node->primaryterm)) {
+        $node->taxonomy[] = $node->primaryterm;
+      } else if (!empty($node->primary_term)) {
+        $node->taxonomy[] = $node->primary_term->tid;
+      }
+      break;
+    
     case 'insert':
     case 'update':
       db_query('DELETE FROM {primary_term} WHERE vid = %d', $node->vid); // only one term per node revision
-      // when node form is submitted, the new PT comes in the $form['taxonomy array']. blame fapi.
-      $primaryterm = isset($node->taxonomy['primaryterm']) ? $node->taxonomy['primaryterm'] : $node->primaryterm;
-      if (!isset($primaryterm) || !$primaryterm) {
+      // When node form is submitted, the new PT tid comes in as
+      // $node->primaryterm (because it is set as
+      // $form['taxonomy']['primaryterm'] but with #tree => false.  If
+      // it is comes directly from node_load(), the PT term object is
+      // in $node->primary_term.
+      if (!empty($node->primaryterm)) {
+        $primaryterm = $node->primaryterm;
+      } else if (!empty($node->primary_term)) {
+        $primaryterm = $node->primary_term->tid;
+      }
+      if (empty($primaryterm)) {
         break;
       }
 
       db_query('INSERT INTO {primary_term} (vid, tid) VALUES (%d, %d)', $node->vid, $primaryterm);
-      
-      // TODO: technically, this should data should be prepared in nodeapi('submit') and then let taxonomy save the terms. that assures that modules that listen on nodeapi insert/update receive proper data
-      // make sure that this term is also in the taxonomy table (even if it wasn't selected in the taxonomy form)
-      db_query('DELETE FROM {term_node} WHERE nid = %d AND tid = %d', $node->vid, $primaryterm); // prevent duplicates
-      db_query('INSERT INTO {term_node} (nid, tid) VALUES (%d, %d)', $node->vid, $primaryterm);     
       break;
-    
+
     case 'load':
       $tid = db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $node->vid));
       $term = taxonomy_get_term($tid);
       $node->primary_term = $term;
+      break;
   }
 }
 
@@ -106,5 +125,142 @@ function primary_term_form_alter($form_id, &$form) {
  * @param integer $vid
  */
 function primary_term_get_term($vid){
-  return db_result(db_query('SELECT tid FROM primary_term WHERE vid = %d', $vid));
+  return db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $vid));
+}
+
+/**********************************************************************
+ * token.module support
+ **********************************************************************/
+
+function primary_term_token_list($type = 'all') {
+  if ($type == 'node' || $type == 'all') {
+    $tokens['node']['primary-term'] = t('Name of primary term');
+    $tokens['node']['primary-term-id'] = t('ID of primary term');
+    return $tokens;
+  }
+}
+
+function primary_term_token_values($type, $object = NULL) {
+  switch ($type) {
+    case 'node':
+      $node = $object;
+      $values['primary-term'] = check_plain($node->primary_term->name);
+      $values['primary-term-id'] = $node->primary_term->tid;
+      break;
+  }
+  return $values;
+}
+
+/**********************************************************************
+ * Views support
+ **********************************************************************/
+
+function primary_term_views_tables() {
+  $tables['primary_term'] = array(
+    'name' => 'primary_term',
+    'join' => array('left' => array('table' => 'node', 'field' => 'vid'),
+      'right' => array('field' => 'vid')),
+    'fields' => array(
+      'tid' => array(
+        'name' => t('Primary Term'),
+        'handler' => 'primary_term_views_handler_field_tid',
+        'addlfields' => array('tid'),
+        'help' => t('This will display the name of the Primary Term of the node.'),
+        ),
+      ),
+    'sorts' => array(
+      'tid' => array(
+        'name' => t('Primary Term'),
+        ),
+      ),
+    'filters' => array(
+      'tid' => array(
+        'name' => t('Primary Term'),
+        'operator' => 'views_handler_operator_andor',
+        'list' => 'views_handler_filter_tid',
+        'value-type' => 'array',
+        'help' => t('Filter by the node\'s Primary Term.'),
+        )
+      )
+    );
+  return $tables;
+}
+
+function primary_term_views_arguments() {
+  $arguments = array(
+    'primary_term' => array(
+      'name' => t('Primary Term'),
+      'handler' => 'primary_term_views_handler_arg_tid',
+      'help' => t('Filter by the node\'s Primary Term.'),
+      ),
+    );
+  return $arguments;
+}
+
+/**
+ * Display a link to a primary term
+ */
+function primary_term_views_handler_field_tid($fieldinfo, $fielddata, $value, $data) {
+  $fieldname = $fielddata['tablename'] . '_tid';
+  $term = taxonomy_get_term($data->$fieldname);
+  $path = taxonomy_term_path($term);
+  return l($term->name, $path);
+}
+
+/**
+ * Implement Primary Term as an argument
+ */
+function primary_term_views_handler_arg_tid($op, &$query, $argtype, $arg = '') {
+  switch($op) {
+    case 'summary':
+      $query->ensure_table('primary_term');
+      $fieldinfo['field'] = "primary_term.tid";
+      return $fieldinfo;
+    case 'sort':
+      $query->add_orderby('primary_term', 'tid', $argtype);
+      break;
+    case 'filter':
+      if ($arg == 0) { // untagged only!
+        $query->ensure_table("primary_term");
+        $query->add_where("primary_term.tid IS NULL");
+      } else {
+        $query->ensure_table("primary_term");
+        $args = _views_break_phrase($arg);
+        if ($args[0] == 'and') {
+          $operator = $argtype['options'] ? '!=' : '=';
+          foreach ($args[1] as $arg) {
+            $query->add_where("primary_term.tid $operator %d", $arg);
+          }
+        }
+        else {
+          $query->add_where("primary_term.tid IN (%s)", implode(',', $args[1]));
+        }
+      }
+      break;
+
+    case 'link':
+      if (!empty($query->primary_term_tid)) {
+        $term = taxonomy_get_term($query->primary_term_tid);
+        return l($term->name, "$arg/" . intval($term->tid));
+      } else {
+        return l(t('No Primary Term'), "$arg/0");
+      }
+    case 'title':
+      return 'unsupported';
+
+      if (!$query) {
+        return t('Uncategorized');
+      }
+      list($type, $info) = _views_break_phrase($query);
+      if (!$info) {
+        return t('Uncategorized');
+      }
+      $tids = implode(',', $info); // only does numbers so safe
+
+      $result = db_query("SELECT name FROM {term_data} WHERE tid IN (%s)", $tids);
+      while ($term = db_fetch_object($result)) {
+        $title .= ($title ? ($type == 'or' ? ' + ' : ', ') : '') . check_plain($term->name);
+      }
+      return $title;
+  }
 }
