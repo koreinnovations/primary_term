@@ -15,12 +15,33 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
 
   switch ($op){
     case 'submit':
-      // $node->taxonomy[] contains voc => array(tids) but
-      // taxonomy_node_save() also accepts just tids in the same array.
+      // Make sure the PT is assigned to the node as a normal term.
+      //
+      // taxonomy_node_save() allows $node->taxonomy to contain tids,
+      // term objects, or arrays of tids (keyed by vocabulary).  So,
+      // we can add the PT tid to the end of the array.
+      //
+      // However, taxonomy_node_save() assumes that a given tid only
+      // occurs once anywhere in node->taxonomy(), so we have to make
+      // sure the PT tid is not already assigned via the form to this
+      // node before adding it.
+      //
+      // In the end, this is more work than doing it "wrong" during
+      // insert/update.
       if (!empty($node->primaryterm)) {
-        $node->taxonomy[] = $node->primaryterm;
+        $tid = $node->primaryterm;
       } else if (!empty($node->primary_term)) {
-        $node->taxonomy[] = $node->primary_term->tid;
+        $tid = $node->primary_term->tid;
+      }
+      if (!empty($tid)) {
+        foreach ($node->taxonomy as $k => $v) {
+          if (is_array($v) && !empty($v[$tid])) {
+            return;
+          } else if (is_numeric($v) && $v == $tid) {
+            return;
+          }
+        }
+        $node->taxonomy[] = $tid;
       }
       break;
     
