@@ -1,18 +1,32 @@
 <?php
 
 function primary_term_install() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':  
-      db_query("CREATE TABLE {primary_term} (
-        vid int(10) NOT NULL default '0',
-        tid int(10) NOT NULL default '0',
-        KEY vid (vid)
-        ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+  drupal_install_schema('primary_term');
   // weight module to run after taxonomy
   db_query("UPDATE {system} SET weight = 9 WHERE name = 'primary_term'");
-  
-  drupal_set_message(t('Database tables installed for Primary Term module.'));
-  break;
-  }
+}
+
+function primary_term_uninstall() {
+  drupal_uninstall_schema('primary_term');
+}
+
+function primary_term_schema() {
+  $schema['primary_term'] = array(
+    'fields' => array(
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'tid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('vid'),
+  );
+  return $schema;
 }

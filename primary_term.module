@@ -14,7 +14,7 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
   // preserves that behavior.
 
   switch ($op){
-    case 'submit':
+    case 'presave':
       // Make sure the PT is assigned to the node as a normal term.
       //
       // taxonomy_node_save() allows $node->taxonomy to contain tids,
@@ -42,6 +42,8 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
           }
         }
         $node->taxonomy[] = $tid;
+        // Load the term so it's available to token/pathauto
+        $node->primary_term = taxonomy_get_term($tid);
       }
       break;
     
@@ -68,12 +70,13 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
     case 'load':
       $tid = db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $node->vid));
       $term = taxonomy_get_term($tid);
+      $node->primaryterm = $tid;
       $node->primary_term = $term;
       break;
   }
 }
 
-function primary_term_form_alter($form_id, &$form) { 
+function primary_term_form_alter(&$form, $form_state, $form_id) { 
   $type = $form['type']['#value'];
   $node = $form['#node'];
 
@@ -98,8 +101,6 @@ function primary_term_form_alter($form_id, &$form) {
           }
         }
         
-        // stick a <none> value on the front of the array
-        array_unshift($terms, t('<none>'));
         $types = node_get_types('names');
         $type = $types[$node->type];
         
@@ -107,10 +108,10 @@ function primary_term_form_alter($form_id, &$form) {
         $form['taxonomy']['primaryterm'] = array(
           '#type' => 'select',
           '#multiple' => 0,
-          '#title' => t('Primary Category'),
+          '#title' => t('Primary Term'),
           '#default_value' => array(primary_term_get_term($form['#node']->vid)),
           '#options' => $terms,
-          '#description' => t('Select a primary category for this %type.', array('%type' => $type)),
+          '#description' => t('Select a primary term for this %type.', array('%type' => $type)),
           '#theme' => 'taxonomy_term_select',
           '#required' => FALSE,
           '#weight' => -4,
@@ -132,11 +133,9 @@ function primary_term_form_alter($form_id, &$form) {
       '#title' => t('Vocabularies for Primary Term'),
       '#options' => $vocabularies,
       '#default_value' => variable_get('pt_vocabs_'. $node_type, array()),
-      '#description' => t('Select which vocabularies should contribute terms to the Primary Category selector. Select none and the selector will not appear.'),
+      '#description' => t('Select which vocabularies should contribute terms to the Primary Term selector. Select none and the selector will not appear.'),
     );
-    
-    
-    
+
   }  
 }
 
@@ -165,8 +164,11 @@ function primary_term_token_values($type, $object = NULL) {
   switch ($type) {
     case 'node':
       $node = $object;
-      $values['primary-term'] = check_plain($node->primary_term->name);
-      $values['primary-term-id'] = $node->primary_term->tid;
+      if (isset($node->primaryterm)) {
+        $term = taxonomy_get_term($node->primaryterm);
+        $values['primary-term'] = check_plain($term->name);
+        $values['primary-term-id'] = $term->tid;
+      }
       break;
   }
   return $values;
@@ -176,112 +178,33 @@ function primary_term_token_values($type, $object = NULL) {
  * Views support
  **********************************************************************/
 
-function primary_term_views_tables() {
+function primary_term_views_data() {
   $tables['primary_term'] = array(
-    'name' => 'primary_term',
-    'join' => array('left' => array('table' => 'node', 'field' => 'vid'),
-      'right' => array('field' => 'vid')),
-    'fields' => array(
-      'tid' => array(
-        'name' => t('Primary Term'),
-        'handler' => 'primary_term_views_handler_field_tid',
-        'addlfields' => array('tid'),
-        'help' => t('This will display the name of the Primary Term of the node.'),
+    'table' => array(
+      'group' => t('Node'),
+      'join' => array(
+        'node' => array(
+          'left_field' => 'vid',
+          'field' => 'vid',
         ),
       ),
-    'sorts' => array(
-      'tid' => array(
-        'name' => t('Primary Term'),
-        ),
+    ),
+    'tid' => array(
+      'title' => t('Primary Term'),
+      'help' => t('The Primary Term of the node.'),
+      'field' => array(
+        'handler' => 'views_handler_field_term_node_tid',
       ),
-    'filters' => array(
-      'tid' => array(
-        'name' => t('Primary Term'),
-        'operator' => 'views_handler_operator_andor',
-        'list' => 'views_handler_filter_tid',
-        'value-type' => 'array',
-        'help' => t('Filter by the node\'s Primary Term.'),
-        )
-      )
-    );
+      'argument' => array(
+        'handler' => 'views_handler_argument_term_node_tid',
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_term_node_tid',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    ),
+  );
   return $tables;
-}
-
-function primary_term_views_arguments() {
-  $arguments = array(
-    'primary_term' => array(
-      'name' => t('Primary Term'),
-      'handler' => 'primary_term_views_handler_arg_tid',
-      'help' => t('Filter by the node\'s Primary Term.'),
-      ),
-    );
-  return $arguments;
-}
-
-/**
- * Display a link to a primary term
- */
-function primary_term_views_handler_field_tid($fieldinfo, $fielddata, $value, $data) {
-  $fieldname = $fielddata['tablename'] . '_tid';
-  $term = taxonomy_get_term($data->$fieldname);
-  $path = taxonomy_term_path($term);
-  return l($term->name, $path);
-}
-
-/**
- * Implement Primary Term as an argument
- */
-function primary_term_views_handler_arg_tid($op, &$query, $argtype, $arg = '') {
-  switch($op) {
-    case 'summary':
-      $query->ensure_table('primary_term');
-      $fieldinfo['field'] = "primary_term.tid";
-      return $fieldinfo;
-    case 'sort':
-      $query->add_orderby('primary_term', 'tid', $argtype);
-      break;
-    case 'filter':
-      if ($arg == 0) { // untagged only!
-        $query->ensure_table("primary_term");
-        $query->add_where("primary_term.tid IS NULL");
-      } else {
-        $query->ensure_table("primary_term");
-        $args = _views_break_phrase($arg);
-        if ($args[0] == 'and') {
-          $operator = $argtype['options'] ? '!=' : '=';
-          foreach ($args[1] as $arg) {
-            $query->add_where("primary_term.tid $operator %d", $arg);
-          }
-        }
-        else {
-          $query->add_where("primary_term.tid IN (%s)", implode(',', $args[1]));
-        }
-      }
-      break;
-
-    case 'link':
-      if (!empty($query->primary_term_tid)) {
-        $term = taxonomy_get_term($query->primary_term_tid);
-        return l($term->name, "$arg/" . intval($term->tid));
-      } else {
-        return l(t('No Primary Term'), "$arg/0");
-      }
-    case 'title':
-      return 'unsupported';
-
-      if (!$query) {
-        return t('Uncategorized');
-      }
-      list($type, $info) = _views_break_phrase($query);
-      if (!$info) {
-        return t('Uncategorized');
-      }
-      $tids = implode(',', $info); // only does numbers so safe
-
-      $result = db_query("SELECT name FROM {term_data} WHERE tid IN (%s)", $tids);
-      while ($term = db_fetch_object($result)) {
-        $title .= ($title ? ($type == 'or' ? ' + ' : ', ') : '') . check_plain($term->name);
-      }
-      return $title;
-  }
 }
