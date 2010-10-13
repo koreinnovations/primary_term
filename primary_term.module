@@ -102,7 +102,7 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
         $terms = array();
         if(is_array($form['taxonomy'])){
           foreach($form['taxonomy'] as $vid => $vocab){
-            if(in_array($vid, $vids)){
+            if(in_array($vid, $vids) && primary_term_vocabulary_access($vid)) {
               if(is_array($vocab['#options'])){
                 $terms = $terms + $vocab['#options'];
               }
@@ -173,6 +173,31 @@ function primary_term_node_type_form_validate(&$form, &$form_state) {
  */
 function primary_term_get_term($vid){
   return db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $vid));
+}
+
+/**
+ * Check permission to access the vocabulary with the given vid.
+ *
+ * Currently used to add support for taxonomy_role.
+ *
+ * @param $vid The vocabulary id of the vocab we are checking access for.
+ *
+ * @return boolean TRUE if the current user can view this vocabulary.
+ */
+function primary_term_vocabulary_access($vid) {
+  // If taxonomy_role is not enabled, return early.
+  if (!module_exists('taxonomy_role')) {
+    return TRUE;
+  }
+
+  $vocabularies = taxonomy_get_vocabularies();
+  if (is_numeric($vid) && user_access('access '. check_plain($vocabularies[$vid]->name) .' vocabulary')) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+
 }
 
 /**********************************************************************
