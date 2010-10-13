@@ -3,6 +3,7 @@
 Primary Term x.x-x.x, xxxx-xx-xx
 -----------------------------------
 Add CHANGELOG.txt to project.
+#357331 by mikeryan: Fixed Duplicate key warnings generated on node_save().
 
 Primary Term 6.X-1.0, 2008-12-23
 -----------------------------------

@@ -35,7 +35,9 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
       }
       if (!empty($tid)) {
         foreach ($node->taxonomy as $k => $v) {
-          if (is_array($v) && !empty($v[$tid])) {
+          if (is_object($v) && $v->tid == $tid) {
+            return;
+          } else if (is_array($v) && !empty($v[$tid])) {
             return;
           } else if (is_numeric($v) && $v == $tid) {
             return;
@@ -46,7 +48,7 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
         $node->primary_term = taxonomy_get_term($tid);
       }
       break;
-    
+
     case 'insert':
     case 'update':
       db_query('DELETE FROM {primary_term} WHERE vid = %d', $node->vid); // only one term per node revision
@@ -76,15 +78,15 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
   }
 }
 
-function primary_term_form_alter(&$form, $form_state, $form_id) { 
+function primary_term_form_alter(&$form, $form_state, $form_id) {
   $type = $form['type']['#value'];
   $node = $form['#node'];
 
   switch ($form_id) {
     case $type .'_node_form':
-  
+
       if ($vids = variable_get('pt_vocabs_'. $form['type']['#value'], array())) {
-        
+
         // go through all taxonomy terms for this type:
         $terms = array();
         if(is_array($form['taxonomy'])){
@@ -100,10 +102,10 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
             }
           }
         }
-        
+
         $types = node_get_types('names');
         $type = $types[$node->type];
-        
+
         // create a new field
         $form['taxonomy']['primaryterm'] = array(
           '#type' => 'select',
@@ -119,15 +121,15 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
           );
       }
       break;
-  
-  
+
+
   case 'node_type_form':
     $node_type = $form['old_type']['#value'];
     $vocabs = taxonomy_get_vocabularies($type);
     foreach($vocabs as $vocab){
       $vocabularies[$vocab->vid] = $vocab->name;
     }
-    
+
     $form['workflow']['pt_vocabs'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Vocabularies for Primary Term'),
@@ -136,7 +138,7 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
       '#description' => t('Select which vocabularies should contribute terms to the Primary Term selector. Select none and the selector will not appear.'),
     );
 
-  }  
+  }
 }
 
 /**
