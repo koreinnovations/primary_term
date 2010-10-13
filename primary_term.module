@@ -111,7 +111,9 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
           '#type' => 'select',
           '#multiple' => 0,
           '#title' => t('Primary Term'),
-          '#default_value' => array(primary_term_get_term($form['#node']->vid)),
+          '#default_value' => $form['#node']->primaryterm ?
+            $form['#node']->primaryterm :
+            array(primary_term_get_term($form['#node']->vid)),
           '#options' => $terms,
           '#description' => t('Select a primary term for this %type.', array('%type' => $type)),
           '#theme' => 'taxonomy_term_select',
