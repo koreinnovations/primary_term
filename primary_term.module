@@ -103,9 +103,25 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
         if(is_array($form['taxonomy'])){
           foreach($form['taxonomy'] as $vid => $vocab){
             if(in_array($vid, $vids) && primary_term_vocabulary_access($vid)) {
-              if(is_array($vocab['#options'])){
-                $terms = $terms + $vocab['#options'];
+
+              $options = array();
+              if(is_array($vocab['#options'])) {
+                $options = $vocab['#options'];
               }
+
+              // Workaround for Hierarchical Select module which removes the $vocab['#options'] data
+              if (empty($options)) {
+                $tree = taxonomy_get_tree($vid);
+                if ($tree) {
+                  foreach ($tree as $term) {
+                    $choice = new stdClass();
+                    $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
+                    $options[] = $choice;
+                  }
+                 }
+              }
+
+              $terms = array_merge($terms, $options);
             }
           }
         }
