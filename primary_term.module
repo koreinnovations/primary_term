@@ -113,7 +113,7 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
           '#options' => $terms,
           '#description' => t('Select a primary term for this %type.', array('%type' => $type)),
           '#theme' => 'taxonomy_term_select',
-          '#required' => FALSE,
+          '#required' => variable_get('pt_required_'. $form['type']['#value'], FALSE),
           '#weight' => -4,
           '#tree' => FALSE, // keep value out of $node->taxonomy
           );
@@ -134,7 +134,24 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
       '#default_value' => variable_get('pt_vocabs_'. $node_type, array()),
       '#description' => t('Select which vocabularies should contribute terms to the Primary Term selector. Select none and the selector will not appear.'),
     );
+    $form['workflow']['pt_required'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Primary Term Required'),
+      '#default_value' => variable_get('pt_required_'. $node_type, FALSE),
+      '#description' => t('Select whether a Primary Term is required for this node type.'),
+    );
+    $form['#validate'][] = 'primary_term_node_type_form_validate';
+  }
+}
 
+/**
+ * Validate our changes to the node_type_form.
+ */
+function primary_term_node_type_form_validate(&$form, &$form_state) {
+  // Verify that if the Primary Term is required, there is a vocabulary
+  // associated with it.
+  if ( ($form_state['values']['pt_required']) && !in_array(TRUE, $form_state['values']['pt_vocabs']) ) {
+    form_set_error('pt_required','If you choose to make the Primary Term required, you must select at least one vocabulary for it.');
   }
 }
 
