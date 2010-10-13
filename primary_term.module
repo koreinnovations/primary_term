@@ -209,33 +209,11 @@ function primary_term_token_values($type, $object = NULL) {
  * Views support
  **********************************************************************/
 
-function primary_term_views_data() {
-  $tables['primary_term'] = array(
-    'table' => array(
-      'group' => t('Node'),
-      'join' => array(
-        'node' => array(
-          'left_field' => 'vid',
-          'field' => 'vid',
-        ),
-      ),
-    ),
-    'tid' => array(
-      'title' => t('Primary Term'),
-      'help' => t('The Primary Term of the node.'),
-      'field' => array(
-        'handler' => 'views_handler_field_term_node_tid',
-      ),
-      'argument' => array(
-        'handler' => 'views_handler_argument_term_node_tid',
-      ),
-      'filter' => array(
-        'handler' => 'views_handler_filter_term_node_tid',
-      ),
-      'sort' => array(
-        'handler' => 'views_handler_sort',
-      ),
-    ),
+/**
+ * Implementation of hook_views_api().
+ */
+function primary_term_views_api() {
+  return array(
+    'api' => 2,
   );
-  return $tables;
 }
