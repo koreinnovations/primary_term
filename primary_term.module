@@ -160,6 +160,13 @@ function primary_term_token_list($type = 'all') {
   if ($type == 'node' || $type == 'all') {
     $tokens['node']['primary-term'] = t('Name of primary term');
     $tokens['node']['primary-term-id'] = t('ID of primary term');
+    $tokens['node']['primary-termpath-raw'] = t('Full Path to Primary Term');
+    $tokens['node']['primary-term-vocab'] = t('Name of the vocab of primary term');
+
+  if (module_exists('uc_catalog')) {
+    $tokens['node']['primary-termpath-uc-raw'] = t('Full catalog path to Primary Term');
+  }
+
     return $tokens;
   }
 }
@@ -172,6 +179,14 @@ function primary_term_token_values($type, $object = NULL) {
         $term = taxonomy_get_term($node->primaryterm);
         $values['primary-term'] = check_plain($term->name);
         $values['primary-term-id'] = $term->tid;
+        $values['primary-termpath-raw'] = drupal_get_path_alias(taxonomy_term_path($term));
+
+        $vocab = taxonomy_vocabulary_load($term->vid);
+        $values['primary-term-vocab'] = $vocab->name;
+
+        if (module_exists('uc_catalog')) {
+          $values['primary-termpath-uc-raw'] = drupal_get_path_alias(uc_catalog_path($term));
+        }
       }
       break;
   }

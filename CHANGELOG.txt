@@ -1,10 +1,11 @@
-# $Id
+// $Id
 
 Primary Term x.x-x.x, xxxx-xx-xx
 -----------------------------------
 Add CHANGELOG.txt to project.
 #357331 by mikeryan: Fixed Duplicate key warnings generated on node_save().
 #343267 by mvc: Fixed Previewing a content type resets the primary term selection to the first option.
+#670724 by cels, rmjiv, ericduran, SkidNCrashwell: Added extra tokens for vocab, full term path, and uc_catalog path (if uc_catalog.module is enabled).
 
 Primary Term 6.X-1.0, 2008-12-23
 -----------------------------------
