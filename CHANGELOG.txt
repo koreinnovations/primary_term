@@ -16,6 +16,7 @@ by brianV: move Views includes to includes/views.
 by brianV: Update README.txt
 #372809 by rmjiv: Add workaround for Hierarchical Slect deleting $vocab['#options'].
 by brianV: Renamed title of views argument / filter to 'Primary Term: Term ID' for clarity.
+by brianV: Fix view handler filepaths.
 
 Primary Term 6.X-1.0, 2008-12-23
 -----------------------------------

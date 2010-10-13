@@ -9,7 +9,7 @@
 function primary_term_views_handlers() {
   return array(
     'info' => array(
-        'path' => drupal_get_path('module', 'primary_term'),
+        'path' => drupal_get_path('module', 'primary_term') . '/includes/views',
     ),
     'handlers' => array(
       'views_handler_field_primary_term_tid' => array(
