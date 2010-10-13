@@ -12,6 +12,7 @@ Add CHANGELOG.txt to project.
 #794790 by drifter, merlinofchaos: Added CTools context and Panels support.
 #743420 by koshea: Add support for Context module.
 #503422 by rmjivn, brianV: Added Support for Taxonomy Role module.
+by BrianV: move Views includes to includes/views.
 
 Primary Term 6.X-1.0, 2008-12-23
 -----------------------------------

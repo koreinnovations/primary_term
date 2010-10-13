@@ -251,6 +251,8 @@ function primary_term_token_values($type, $object = NULL) {
 function primary_term_views_api() {
   return array(
     'api' => 2,
+    'path' => drupal_get_path('module', 'primary_term') . '/includes/views',
+
   );
 }
 
