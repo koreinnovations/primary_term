@@ -6,10 +6,13 @@ multiple terms from a single vocabulary, a primary term can specify
 which summary page the node should be listed on, which theme template
 to apply, etc.
 
-NOTE: I adopted this module in October, 2007. I am maintaining the
-Drupal 5 and 6 versions, but not the Drupal 4.7 version. If someone
-wants to take responsibility for back-porting fixes to the 4.7 branch,
-let me know.
+Modules integrated:
+
+CTools
+Context
+Panels
+Taxonomy Role
+Views
 
 INSTALLATION AND USE
 
