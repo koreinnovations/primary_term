@@ -10,6 +10,7 @@ Add CHANGELOG.txt to project.
 #727190 by rmjiv: Allow the Primary Term field to be optionally set as required per node type.
 #160382 by mvc, jonskulski: Update Views integration, only show selected primary term when selected as a field.
 #794790 by drifter, merlinofchaos: Added CTools context and Panels support.
+#743420 by koshea: Add support for Context module.
 
 Primary Term 6.X-1.0, 2008-12-23
 -----------------------------------

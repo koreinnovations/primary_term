@@ -75,6 +75,17 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
       $node->primaryterm = $tid;
       $node->primary_term = $term;
       break;
+
+    case 'view':
+      if (module_exists('context') && $page) {
+        $object = menu_get_object();
+        if (isset($object->nid) && $object->nid === $node->nid) {
+          if ($plugin = context_get_plugin('condition', 'primary_term')) {
+            $plugin->execute($node, 'view');
+          }
+        }
+      }
+      break;
   }
 }
 
@@ -233,4 +244,38 @@ function primary_term_ctools_plugin_directory($module, $plugin) {
   if ($module == 'ctools' && !empty($plugin)) {
     return "plugins/$plugin";
   }
+}
+
+/**********************************************************************
+ * Context support
+ **********************************************************************/
+
+function primary_term_ctools_plugin_api($module, $api) {
+  if ($module == 'context' && $api == 'plugins') {
+    return array('version' => 3);
+  }
+}
+
+function primary_term_context_plugins() {
+  $plugins = array();
+  $plugins['primary_term_context_condition_primary_term'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'primary_term') . '/plugins/context',
+      'file' => 'primary_term_context_condition_primary_term.inc',
+      'class' => 'primary_term_context_condition_primary_term',
+      'parent' => 'context_condition_node',
+    ),
+  );
+  return $plugins;
+}
+
+function primary_term_context_registry() {
+  return array(
+    'conditions' => array(
+      'primary_term' => array(
+        'title' => t('Primary Term'),
+        'plugin' => 'primary_term_context_condition_primary_term',
+      ),
+    ),
+  );
 }
