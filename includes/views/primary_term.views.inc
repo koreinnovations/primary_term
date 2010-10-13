@@ -33,8 +33,8 @@ function primary_term_views_data() {
   );
 
   $data['primary_term']['tid'] = array(
-    'title' => t('Primary Term'),
-    'help' => t('The Primary Term of the node.'),
+    'title' => t('Primary Term: Term ID'),
+    'help' => t('The Primary Term TID of the node.'),
     'field' => array(
       'handler' => 'views_handler_field_primary_term_tid',
       'click sortable' => TRUE,
