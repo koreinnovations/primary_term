@@ -93,10 +93,6 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
           foreach($form['taxonomy'] as $vid => $vocab){
             if(in_array($vid, $vids)){
               if(is_array($vocab['#options'])){
-                if(strlen(trim($vocab['#options']))){
-                  // not sure why we have the line below. from old days.
-                  // unset($vocab['#options'][0]);
-                }
                 $terms = $terms + $vocab['#options'];
               }
             }
@@ -123,7 +119,6 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
           );
       }
       break;
-
 
   case 'node_type_form':
     $node_type = $form['old_type']['#value'];
