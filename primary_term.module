@@ -217,3 +217,20 @@ function primary_term_views_api() {
     'api' => 2,
   );
 }
+
+/**********************************************************************
+ * CTools support
+ **********************************************************************/
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ *
+ * It simply tells panels where to find the .inc files that define various
+ * args, contexts, content_types. In this case the subdirectories of
+ * mypane/panels are used.
+ */
+function primary_term_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools' && !empty($plugin)) {
+    return "plugins/$plugin";
+  }
+}

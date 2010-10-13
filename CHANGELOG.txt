@@ -9,6 +9,7 @@ Add CHANGELOG.txt to project.
 #906016 by srjosh: Fixed trim() in form_alter() can't take array; unused anyway.
 #727190 by rmjiv: Allow the Primary Term field to be optionally set as required per node type.
 #160382 by mvc, jonskulski: Update Views integration, only show selected primary term when selected as a field.
+#794790 by drifter, merlinofchaos: Added CTools context and Panels support.
 
 Primary Term 6.X-1.0, 2008-12-23
 -----------------------------------
