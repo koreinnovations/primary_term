@@ -129,8 +129,8 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
         $types = node_get_types('names');
         $type = $types[$node->type];
 
-        // create a new field
-        $form['taxonomy']['primaryterm'] = array(
+        // Create a new field.
+        $form['primaryterm'] = array(
           '#type' => 'select',
           '#multiple' => 0,
           '#title' => variable_get('pt_title_'. $form['type']['#value'], t('Primary Term')),
@@ -141,8 +141,7 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
           '#description' => t('Select a primary term for this %type.', array('%type' => $type)),
           '#theme' => 'taxonomy_term_select',
           '#required' => variable_get('pt_required_'. $form['type']['#value'], FALSE),
-          '#weight' => -4,
-          '#tree' => FALSE, // keep value out of $node->taxonomy
+          '#weight' => content_extra_field_weight($node->type, 'primary_term'),
           );
       }
       break;
@@ -193,7 +192,17 @@ function primary_term_node_type_form_validate(&$form, &$form_state) {
  * Get primary term for a given node version id (vid)
  *
  * @param integer $vid
- */
+ *//**
+* Implementation of CCK's hook_content_extra_fields.
+*/
+function primary_term_content_extra_fields() {
+  $extras['primary_term'] = array(
+    'label' => t('Primary Term'),
+    'description' => t('Primary Term widget (node editing only)'),
+    'weight' => 0,
+  );
+  return $extras;
+}
 function primary_term_get_term($vid){
   return db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $vid));
 }
@@ -221,6 +230,18 @@ function primary_term_vocabulary_access($vid) {
     return FALSE;
   }
 
+}
+
+/**
+* Implementation of CCK's hook_content_extra_fields.
+*/
+function primary_term_content_extra_fields() {
+  $extras['primary_term'] = array(
+    'label' => t('Primary Term'),
+    'description' => t('Primary Term widget (node editing only)'),
+    'weight' => 0,
+  );
+  return $extras;
 }
 
 /**********************************************************************
