@@ -17,6 +17,7 @@ by brianV: Update README.txt
 #372809 by rmjiv: Add workaround for Hierarchical Slect deleting $vocab['#options'].
 by brianV: Renamed title of views argument / filter to 'Primary Term: Term ID' for clarity.
 by brianV: Fix view handler filepaths.
+by brianV: Allow user to specify custom titles for the Primary Term field per content type.
 
 Primary Term 6.X-1.0, 2008-12-23
 -----------------------------------

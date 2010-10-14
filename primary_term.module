@@ -133,7 +133,7 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
         $form['taxonomy']['primaryterm'] = array(
           '#type' => 'select',
           '#multiple' => 0,
-          '#title' => t('Primary Term'),
+          '#title' => variable_get('pt_title_'. $form['type']['#value'], t('Primary Term')),
           '#default_value' => $form['#node']->primaryterm ?
             $form['#node']->primaryterm :
             array(primary_term_get_term($form['#node']->vid)),
@@ -166,6 +166,13 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
       '#title' => t('Primary Term Required'),
       '#default_value' => variable_get('pt_required_'. $node_type, FALSE),
       '#description' => t('Select whether a Primary Term is required for this node type.'),
+    );
+    $form['workflow']['pt_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Primary Term Title'),
+      '#required' => TRUE,
+      '#default_value' => variable_get('pt_title_'. $node_type, t('Primary Term')),
+      '#description' => t("Enter a label for the Primary Term field."),
     );
     $form['#validate'][] = 'primary_term_node_type_form_validate';
   }
