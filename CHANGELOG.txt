@@ -2,6 +2,9 @@ $Id$
 
 Primary Term x.x-x.x, xxxx-xx-xx
 -----------------------------------
+
+Primary Term 6.X-1.1, 2010-10-18
+-----------------------------------
 Add CHANGELOG.txt to project.
 #357331 by mikeryan: Fixed Duplicate key warnings generated on node_save().
 #343267 by mvc: Fixed Previewing a content type resets the primary term selection to the first option.
@@ -20,6 +23,7 @@ by brianV: Fix view handler filepaths.
 by brianV: Allow user to specify custom titles for the Primary Term field per content type.
 by brianV: Pull the widget out of the $form['taxonomy'] array, and implement hook_content_extra_fields() so it can be positioned wherever the user wishes via CCK's 'Manage Fields' page.
 by brianV: Build the Options list for the from scratch every time rather than from the options in the various $form['taxonomy'] widgets since Content Taxonomy removes all the $form['taxonomy'] widgets.
+by brianV: Update CHANGELOG.txt for the 6.x-1.1 release.
 
 Primary Term 6.X-1.0, 2008-12-23
 -----------------------------------
