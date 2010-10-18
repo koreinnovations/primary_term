@@ -199,14 +199,6 @@ function primary_term_node_type_form_validate(&$form, &$form_state) {
  *//**
 * Implementation of CCK's hook_content_extra_fields.
 */
-function primary_term_content_extra_fields() {
-  $extras['primary_term'] = array(
-    'label' => t('Primary Term'),
-    'description' => t('Primary Term widget (node editing only)'),
-    'weight' => 0,
-  );
-  return $extras;
-}
 function primary_term_get_term($vid){
   return db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $vid));
 }
