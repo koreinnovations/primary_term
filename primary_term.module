@@ -113,6 +113,12 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
           if (in_array($vid, $vids) && primary_term_vocabulary_access($vid)) {
             $options = array();
             $tree = taxonomy_get_tree($vid);
+
+            // If i18n Taxonomy is installed, localize the names of the terms we are fetching.
+            if ($tree && module_exists('i18ntaxonomy')) {
+              $tree = i18ntaxonomy_localize_terms($tree);
+            }
+
             if ($tree) {
               foreach ($tree as $term) {
                 $choice = new stdClass();
