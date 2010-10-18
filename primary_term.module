@@ -96,33 +96,31 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
   switch ($form_id) {
     case $type .'_node_form':
 
+      // Build the Primary Term form element. Note: This no longer uses
+      // $form['taxonomy'] since other modules have been known to alter or
+      // remove it. (e.g Hierarchical Select or Content Taxonomy)
       if ($vids = variable_get('pt_vocabs_'. $form['type']['#value'], array())) {
 
-        // go through all taxonomy terms for this type:
+        // Get vids of vocabs associated with this node type.
+        $results = db_query("SELECT vid FROM {vocabulary_node_types} WHERE type = '%s'", $type);
+        while ($r = db_fetch_object($results)) {
+          $type_vids[] = $r->vid;
+        }
+
+        // Build the select list options from the terms within these vocabularies.
         $terms = array();
-        if(is_array($form['taxonomy'])){
-          foreach($form['taxonomy'] as $vid => $vocab){
-            if(in_array($vid, $vids) && primary_term_vocabulary_access($vid)) {
-
-              $options = array();
-              if(is_array($vocab['#options'])) {
-                $options = $vocab['#options'];
+        foreach ($type_vids as $vid) {
+          if (in_array($vid, $vids) && primary_term_vocabulary_access($vid)) {
+            $options = array();
+            $tree = taxonomy_get_tree($vid);
+            if ($tree) {
+              foreach ($tree as $term) {
+                $choice = new stdClass();
+                $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
+                $options[] = $choice;
               }
-
-              // Workaround for Hierarchical Select module which removes the $vocab['#options'] data
-              if (empty($options)) {
-                $tree = taxonomy_get_tree($vid);
-                if ($tree) {
-                  foreach ($tree as $term) {
-                    $choice = new stdClass();
-                    $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
-                    $options[] = $choice;
-                  }
-                 }
-              }
-
-              $terms = array_merge($terms, $options);
             }
+            $terms = array_merge($terms, $options);
           }
         }
 
