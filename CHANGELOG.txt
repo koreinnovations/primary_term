@@ -2,8 +2,12 @@ $Id$
 
 Primary Term x.x-x.x, xxxx-xx-xx
 -----------------------------------
+
+Primary Term 6.X-1.2, 2010-10-19
+-----------------------------------
 by brianV: Integrate with i18ntaxonomy.
 by brianV: Remove extra primary_term_content_extra_fields() implementation that snuck in somewhere.
+by brianV: Update CHANGELOG.txt for the 6.x-1.2 release.
 
 Primary Term 6.X-1.1, 2010-10-18
 -----------------------------------
