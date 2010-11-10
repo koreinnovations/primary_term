@@ -4,6 +4,7 @@ Primary Term x.x-x.x, xxxx-xx-xx
 -----------------------------------
 #967472 by wulff: Changed Patch: Add missing t() to validate callback.
 #967494 by wulff: Changed Patch: Comply with Drupal coding standards.
+#967594 by wulff: Changed Patch: Remove PHP notices, simplify form_alter().
 
 Primary Term 6.X-1.2, 2010-10-19
 -----------------------------------

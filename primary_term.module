@@ -83,9 +83,10 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
 
     case 'load':
       $tid = db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $node->vid));
-      $term = taxonomy_get_term($tid);
-      $node->primaryterm = $tid;
-      $node->primary_term = $term;
+      if ($tid && $term = taxonomy_get_term($tid)) {
+        $node->primaryterm = $tid;
+        $node->primary_term = $term;
+      }
       break;
 
     case 'view':
@@ -101,96 +102,95 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
   }
 }
 
-function primary_term_form_alter(&$form, $form_state, $form_id) {
-  $type = $form['type']['#value'];
-  $node = $form['#node'];
+/**
+ * Implementation of hook_form_alter().
+ */
+function primary_term_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    $node_type = $form['type']['#value'];
+    $node = $form['#node'];
 
-  switch ($form_id) {
-    case $type .'_node_form':
-
-      // Build the Primary Term form element. Note: This no longer uses
-      // $form['taxonomy'] since other modules have been known to alter or
-      // remove it. (e.g Hierarchical Select or Content Taxonomy)
-      if ($vids = variable_get('pt_vocabs_'. $form['type']['#value'], array())) {
-
-        // Get vids of vocabs associated with this node type.
-        $results = db_query("SELECT vid FROM {vocabulary_node_types} WHERE type = '%s'", $type);
-        while ($r = db_fetch_object($results)) {
-          $type_vids[] = $r->vid;
-        }
-
-        // Build the select list options from the terms within these vocabularies.
-        $terms = array();
-        foreach ($type_vids as $vid) {
-          if (in_array($vid, $vids) && primary_term_vocabulary_access($vid)) {
-            $options = array();
-            $tree = taxonomy_get_tree($vid);
-
+    if ($vids = variable_get('pt_vocabs_'. $node_type, array())) {
+      // Build the select list options from the terms within these vocabularies.
+      $options = array();
+      foreach ($vids as $vid) {
+        if (primary_term_vocabulary_access($vid)) {
+          if ($tree = taxonomy_get_tree($vid)) {
             // If i18n Taxonomy is installed, localize the names of the terms we are fetching.
-            if ($tree && module_exists('i18ntaxonomy')) {
+            if (module_exists('i18ntaxonomy')) {
               $tree = i18ntaxonomy_localize_terms($tree);
             }
 
-            if ($tree) {
-              foreach ($tree as $term) {
-                $choice = new stdClass();
-                $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
-                $options[] = $choice;
-              }
+            foreach ($tree as $term) {
+              $options[$term->tid] = str_repeat('-', $term->depth) .' '. $term->name;
             }
-            $terms = array_merge($terms, $options);
           }
         }
-
-        $types = node_get_types('names');
-        $type = $types[$node->type];
-
-        // Create a new field.
-        $form['primaryterm'] = array(
-          '#type' => 'select',
-          '#multiple' => 0,
-          '#title' => variable_get('pt_title_'. $form['type']['#value'], t('Primary Term')),
-          '#default_value' => $form['#node']->primaryterm ?
-            $form['#node']->primaryterm :
-            array(primary_term_get_term($form['#node']->vid)),
-          '#options' => $terms,
-          '#description' => t('Select a primary term for this %type.', array('%type' => $type)),
-          '#theme' => 'taxonomy_term_select',
-          '#required' => variable_get('pt_required_'. $form['type']['#value'], FALSE),
-          '#weight' => content_extra_field_weight($node->type, 'primary_term'),
-          );
       }
-      break;
 
-  case 'node_type_form':
-    $node_type = $form['old_type']['#value'];
-    $vocabs = taxonomy_get_vocabularies($type);
-    foreach($vocabs as $vocab){
-      $vocabularies[$vocab->vid] = $vocab->name;
+      $default_value = array();
+      if (isset($node->primaryterm)) {
+        $default_value = $node->primaryterm;
+      }
+
+      // if the primary term is not required, we add the option to ignore it
+      $required = variable_get('pt_required_'. $node_type, FALSE);
+      if (!$required) {
+        // avoid reindexing of the array
+        $options = array(t('- None -')) + $options;
+      }
+
+      $form['primaryterm'] = array(
+        '#type' => 'select',
+        '#title' => variable_get('pt_title_'. $node_type, t('Primary term')),
+        '#description' => t('Select a primary term for this %type.', array('%type' => $node_type)),
+        '#options' => $options,
+        '#default_value' => $default_value,
+        '#required' => $required,
+        '#theme' => 'taxonomy_term_select',
+      );
+
+      if (module_exists('content')) {
+        $form['primaryterm']['#weight'] = content_extra_field_weight($node_type, 'primary_term');
+      }
     }
-
-    $form['workflow']['pt_vocabs'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Vocabularies for Primary Term'),
-      '#options' => $vocabularies,
-      '#default_value' => variable_get('pt_vocabs_'. $node_type, array()),
-      '#description' => t('Select which vocabularies should contribute terms to the Primary Term selector. Select none and the selector will not appear.'),
-    );
-    $form['workflow']['pt_required'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Primary Term Required'),
-      '#default_value' => variable_get('pt_required_'. $node_type, FALSE),
-      '#description' => t('Select whether a Primary Term is required for this node type.'),
-    );
-    $form['workflow']['pt_title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Primary Term Title'),
-      '#required' => TRUE,
-      '#default_value' => variable_get('pt_title_'. $node_type, t('Primary Term')),
-      '#description' => t("Enter a label for the Primary Term field."),
-    );
-    $form['#validate'][] = 'primary_term_node_type_form_validate';
   }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function primary_term_form_node_type_form_alter(&$form, &$form_state) {
+  $node_type = $form['old_type']['#value'];
+  $vocabularies = taxonomy_get_vocabularies($node_type);
+
+  $options = array();
+  foreach ($vocabularies as $vocabulary) {
+    $options[$vocabulary->vid] = $vocabulary->name;
+  }
+
+  $form['workflow']['pt_vocabs'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Primary term vocabularies'),
+    '#options' => $options,
+    '#default_value' => variable_get('pt_vocabs_'. $node_type, array()),
+    '#description' => t('Select which vocabularies should contribute terms to the primary term selector. Select none and the selector will not appear.'),
+  );
+  $form['workflow']['pt_required'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Primary term is required'),
+    '#default_value' => variable_get('pt_required_'. $node_type, FALSE),
+    '#description' => t('Select whether a primary term is required for this node type.'),
+  );
+  $form['workflow']['pt_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Primary term widget label'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('pt_title_'. $node_type, t('Primary Term')),
+    '#description' => t("Enter a label for the primary term widget."),
+  );
+
+  $form['#validate'][] = 'primary_term_node_type_form_validate';
 }
 
 /**
@@ -283,7 +283,7 @@ function primary_term_token_values($type, $object = NULL) {
   switch ($type) {
     case 'node':
       $node = $object;
-      if (isset($node->primaryterm)) {
+      if (isset($node->primaryterm) && $node->primaryterm > 0) {
         $term = taxonomy_get_term($node->primaryterm);
         $values['primary-term'] = check_plain($term->name);
         $values['primary-term-id'] = $term->tid;
