@@ -3,8 +3,12 @@
 // $Id$
 
 /**
- * @TODO
- * - add a validate function to the form_alter
+ * @file
+ * Allows selection of a primary term for nodes
+ */
+ 
+/**
+ * Implementation of hook_nodeapi().
  */
 
 function primary_term_nodeapi(&$node, $op, $teaser, $page) {
@@ -13,7 +17,7 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
   // author meant that or if it was a mistake.  For now, the module
   // preserves that behavior.
 
-  switch ($op){
+  switch ($op) {
     case 'presave':
       // Make sure the PT is assigned to the node as a normal term.
       //
@@ -30,20 +34,26 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
       // insert/update.
       if (!empty($node->primaryterm)) {
         $tid = $node->primaryterm;
-      } else if (!empty($node->primary_term)) {
+      } 
+      elseif (!empty($node->primary_term)) {
         $tid = $node->primary_term->tid;
       }
+      
       if (!empty($tid)) {
         foreach ($node->taxonomy as $k => $v) {
           if (is_object($v) && $v->tid == $tid) {
             return;
-          } else if (is_array($v) && !empty($v[$tid])) {
+          } 
+          elseif (is_array($v) && !empty($v[$tid])) {
             return;
-          } else if (is_numeric($v) && $v == $tid) {
+          }
+          elseif (is_numeric($v) && $v == $tid) {
             return;
           }
         }
+        
         $node->taxonomy[] = $tid;
+        
         // Load the term so it's available to token/pathauto
         $node->primary_term = taxonomy_get_term($tid);
       }
@@ -59,9 +69,11 @@ function primary_term_nodeapi(&$node, $op, $teaser, $page) {
       // in $node->primary_term.
       if (!empty($node->primaryterm)) {
         $primaryterm = $node->primaryterm;
-      } else if (!empty($node->primary_term)) {
+      } 
+      elseif (!empty($node->primary_term)) {
         $primaryterm = $node->primary_term->tid;
       }
+      
       if (empty($primaryterm)) {
         break;
       }
@@ -196,10 +208,8 @@ function primary_term_node_type_form_validate(&$form, &$form_state) {
  * Get primary term for a given node version id (vid)
  *
  * @param integer $vid
- *//**
-* Implementation of CCK's hook_content_extra_fields.
-*/
-function primary_term_get_term($vid){
+ */
+function primary_term_get_term($vid) {
   return db_result(db_query('SELECT tid FROM {primary_term} WHERE vid = %d', $vid));
 }
 
@@ -225,25 +235,30 @@ function primary_term_vocabulary_access($vid) {
   else {
     return FALSE;
   }
-
 }
 
 /**
-* Implementation of CCK's hook_content_extra_fields.
-*/
+ * Implementation of hook_content_extra_fields().
+ */
 function primary_term_content_extra_fields() {
+  $extras = array();
+
   $extras['primary_term'] = array(
     'label' => t('Primary Term'),
-    'description' => t('Primary Term widget (node editing only)'),
+    'description' => t('Primary term widget (node editing only)'),
     'weight' => 0,
   );
+
   return $extras;
 }
 
-/**********************************************************************
- * token.module support
- **********************************************************************/
+/**
+ * Token support
+ */
 
+/**
+ * Implementation of hook_token_list().
+ */
 function primary_term_token_list($type = 'all') {
   if ($type == 'node' || $type == 'all') {
     $tokens['node']['primary-term'] = t('Name of primary term');
@@ -259,7 +274,12 @@ function primary_term_token_list($type = 'all') {
   }
 }
 
+/**
+ * Implementation of hook_token_values().
+ */
 function primary_term_token_values($type, $object = NULL) {
+  $values = array();
+
   switch ($type) {
     case 'node':
       $node = $object;
@@ -281,9 +301,9 @@ function primary_term_token_values($type, $object = NULL) {
   return $values;
 }
 
-/**********************************************************************
+/**
  * Views support
- **********************************************************************/
+ */
 
 /**
  * Implementation of hook_views_api().
@@ -292,13 +312,12 @@ function primary_term_views_api() {
   return array(
     'api' => 2,
     'path' => drupal_get_path('module', 'primary_term') . '/includes/views',
-
   );
 }
 
-/**********************************************************************
+/**
  * CTools support
- **********************************************************************/
+ */
 
 /**
  * Implementation of hook_ctools_plugin_directory().
@@ -313,16 +332,22 @@ function primary_term_ctools_plugin_directory($module, $plugin) {
   }
 }
 
-/**********************************************************************
+/**
  * Context support
- **********************************************************************/
+ */
 
+/**
+ * Implementation of hook_ctools_plugin_api().
+ */
 function primary_term_ctools_plugin_api($module, $api) {
   if ($module == 'context' && $api == 'plugins') {
     return array('version' => 3);
   }
 }
 
+/**
+ * Implementation of hook_context_plugins().
+ */
 function primary_term_context_plugins() {
   $plugins = array();
   $plugins['primary_term_context_condition_primary_term'] = array(
@@ -336,6 +361,9 @@ function primary_term_context_plugins() {
   return $plugins;
 }
 
+/**
+ * Implementation of hook_context_registry().
+ */
 function primary_term_context_registry() {
   return array(
     'conditions' => array(

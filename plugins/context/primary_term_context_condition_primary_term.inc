@@ -1,6 +1,11 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ * Primary term plugin for Context.
+ */
+
 class primary_term_context_condition_primary_term extends context_condition_node {
   function condition_values() {
     $values = array();
@@ -34,4 +39,3 @@ class primary_term_context_condition_primary_term extends context_condition_node
     }
   }
 }
-?>

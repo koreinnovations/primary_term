@@ -3,6 +3,7 @@ $Id$
 Primary Term x.x-x.x, xxxx-xx-xx
 -----------------------------------
 #967472 by wulff: Changed Patch: Add missing t() to validate callback.
+#967494 by wulff: Changed Patch: Comply with Drupal coding standards.
 
 Primary Term 6.X-1.2, 2010-10-19
 -----------------------------------

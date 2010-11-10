@@ -1,16 +1,35 @@
 <?php
+// $Id$
 
+/**
+ * @file
+ * Installation file for the Primary Term module.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
 function primary_term_install() {
   drupal_install_schema('primary_term');
   // weight module to run after taxonomy
   db_query("UPDATE {system} SET weight = 9 WHERE name = 'primary_term'");
 }
 
+/**
+ * Implementation of hook_uninstall().
+ */
 function primary_term_uninstall() {
   drupal_uninstall_schema('primary_term');
+
+  // TODO: delete all variables set by the module
 }
 
+/**
+ * Implementation of hook_schema().
+ */
 function primary_term_schema() {
+  $schema = array();
+
   $schema['primary_term'] = array(
     'fields' => array(
       'vid' => array(
@@ -28,5 +47,6 @@ function primary_term_schema() {
     ),
     'primary key' => array('vid'),
   );
+
   return $schema;
 }
