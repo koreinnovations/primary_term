@@ -2,6 +2,7 @@ $Id$
 
 Primary Term x.x-x.x, xxxx-xx-xx
 -----------------------------------
+#967472 by wulff: Changed Patch: Add missing t() to validate callback.
 
 Primary Term 6.X-1.2, 2010-10-19
 -----------------------------------

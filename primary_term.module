@@ -187,8 +187,8 @@ function primary_term_form_alter(&$form, $form_state, $form_id) {
 function primary_term_node_type_form_validate(&$form, &$form_state) {
   // Verify that if the Primary Term is required, there is a vocabulary
   // associated with it.
-  if ( ($form_state['values']['pt_required']) && !in_array(TRUE, $form_state['values']['pt_vocabs']) ) {
-    form_set_error('pt_required','If you choose to make the Primary Term required, you must select at least one vocabulary for it.');
+  if (($form_state['values']['pt_required']) && !in_array(TRUE, $form_state['values']['pt_vocabs'])) {
+    form_set_error('pt_required',t('If you choose to make the Primary Term required, you must select at least one vocabulary for it.'));
   }
 }
 
