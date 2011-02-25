@@ -1,4 +1,3 @@
-$Id$
 
 The Primary Term modules allows you to specify which taxonomy term
 should be the "primary" term for a node. For nodes that can have

@@ -1,4 +1,3 @@
-; $Id$
 name = Primary term
 description =  Allows selection of a primary term for nodes
 dependencies[] = taxonomy
