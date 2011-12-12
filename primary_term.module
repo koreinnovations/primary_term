@@ -1,5 +1,8 @@
 <?php
 
+// Load the action info
+module_load_include('inc', 'primary_term', 'includes/primary_term.action');
+
 
 /**
  * @file
